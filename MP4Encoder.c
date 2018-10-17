@@ -37,8 +37,8 @@ bool CreateMP4File(const char *pFileName, int width, int height, int timeScale/*
 	}
 	F_H264_MP4ENCODER.m_nWidth = width;
 	F_H264_MP4ENCODER.m_nHeight = height;
-	F_H264_MP4ENCODER.m_nTimeScale = 1200000;
-	F_H264_MP4ENCODER.m_nFrameRate = 25;
+	F_H264_MP4ENCODER.m_nTimeScale = 10000000;
+	F_H264_MP4ENCODER.m_nFrameRate = 30;
 	MP4SetTimeScale(F_H264_MP4ENCODER.hMp4file, F_H264_MP4ENCODER.m_nTimeScale);
     printf ("hMp4File  %x \n", F_H264_MP4ENCODER.hMp4file);
 	return true;
@@ -193,7 +193,7 @@ bool WriteH264File(const char* pFile264, const char* pFileMp4)
 		return false;
 	}
 
-	MP4FILE = CreateMP4File(pFileMp4, 352, 288, 1200000, 25);
+	MP4FILE = CreateMP4File(pFileMp4, 1280, 720, 10000000, 30);
 	if( MP4FILE == FALSE ){
         printf("ERROR:Create file failed!");
 	}
