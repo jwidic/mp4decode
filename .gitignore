@@ -1,0 +1,4 @@
+*.o
+test.mp4
+mp4cencode
+bin/
