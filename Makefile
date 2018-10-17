@@ -1,9 +1,10 @@
 # set the compile chain
 CC = gcc -g
+CCX = g++ -g
 CFLAGS = -Wall
 
 #target
-TARGET=mp4encode
+TARGET=mp4cencode
 
 # h file seach path
 INC = -I. -I./include/mp4v2
@@ -19,10 +20,10 @@ RPATH = -Wl,-rpath=./lib
 SRCS = main.c MP4Encoder.c
 # Obj file
 OBJS = $(SRCS:.c=.o)
-
+#OBJS = main.o MP4Encoder.o
 $(TARGET):$(OBJS)
 #	$(CC) -o $@ $^ $(LDFLAGS) $(DLIBS) $(RPATH)
-	$(CC) -o $@ $^ $(LDFLAGS) $(DLIBS)	$(RPATH)
+	$(CCX) -o $@ $^ $(LDFLAGS) $(DLIBS) $(RPATH)
 	
 clean:
 	rm -rf $(TARGET) $(OBJS)
