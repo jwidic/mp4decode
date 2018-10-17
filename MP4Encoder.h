@@ -49,8 +49,8 @@ struct H264_MP4ENCODER
 	// no need to call CreateMP4File and CloseMP4File,it will create/close mp4 file automaticly.
 	bool WriteH264File(const char* pFile264, const char* pFileMp4);
 	// Prase H264 metamata from H264 data frame
-	bool PraseMetadata(const unsigned char* pData, int size, MP4ENC_Metadata metadata);
+	bool PraseMetadata(const unsigned char* pData, int size, MP4ENC_Metadata *metadata);
 	// read one nalu from H264 data buffer
-	int ReadOneNaluFromBuf(const unsigned char *buffer, unsigned int nBufferSize, unsigned int offSet, MP4ENC_NaluUnit nalu);
+	int ReadOneNaluFromBuf(const unsigned char *buffer, unsigned int nBufferSize, unsigned int offSet, MP4ENC_NaluUnit *nalu);
 
 

@@ -40,6 +40,7 @@ bool CreateMP4File(const char *pFileName, int width, int height, int timeScale/*
 	F_H264_MP4ENCODER.m_nTimeScale = 1200000;
 	F_H264_MP4ENCODER.m_nFrameRate = 25;
 	MP4SetTimeScale(F_H264_MP4ENCODER.hMp4file, F_H264_MP4ENCODER.m_nTimeScale);
+    printf ("hMp4File  %x \n", F_H264_MP4ENCODER.hMp4file);
 	return true;
 }
 
@@ -73,7 +74,7 @@ bool Write264Metadata(MP4FileHandle hMp4File, LPMP4ENC_Metadata lpMetadata)
 
 int WriteH264Data(MP4FileHandle hMp4File, const unsigned char* pData, int size)
 {
-    unsigned char data[BUFFER_SIZE] =0;
+    unsigned char data[BUFFER_SIZE]={0};
 	if (hMp4File == NULL)
 	{
 		return -1;
@@ -84,7 +85,8 @@ int WriteH264Data(MP4FileHandle hMp4File, const unsigned char* pData, int size)
 	}
 	MP4ENC_NaluUnit nalu;
 	int pos = 0, len = 0;
-	while (len = ReadOneNaluFromBuf(pData, size, pos, nalu))
+    printf ("hMp4File  %x \n", hMp4File);
+	while (len = ReadOneNaluFromBuf(pData, size, pos, &nalu))
 	{
 		if (nalu.type == 0x07) // sps
 		{
@@ -125,7 +127,6 @@ int WriteH264Data(MP4FileHandle hMp4File, const unsigned char* pData, int size)
 			{
 				return 0;
 			}
-			delete[] data;
 		}
 
 		pos += len;
@@ -133,7 +134,7 @@ int WriteH264Data(MP4FileHandle hMp4File, const unsigned char* pData, int size)
 	return pos;
 }
 
-int ReadOneNaluFromBuf(const unsigned char *buffer, unsigned int nBufferSize, unsigned int offSet, MP4ENC_NaluUnit &nalu)
+int ReadOneNaluFromBuf(const unsigned char *buffer, unsigned int nBufferSize, unsigned int offSet, MP4ENC_NaluUnit *nalu)
 {
 	int i = offSet;
 	while (i<nBufferSize)
@@ -158,16 +159,16 @@ int ReadOneNaluFromBuf(const unsigned char *buffer, unsigned int nBufferSize, un
 			}
 			if (pos == nBufferSize)
 			{
-				nalu.size = pos - i;
+				nalu->size = pos - i;
 			}
 			else
 			{
-				nalu.size = (pos - 4) - i;
+				nalu->size = (pos - 4) - i;
 			}
 
-			nalu.type = buffer[i] & 0x1f;
-			nalu.data = (unsigned char*)&buffer[i];
-			return (nalu.size + i - offSet);
+			nalu->type = buffer[i] & 0x1f;
+			nalu->data = (unsigned char*)&buffer[i];
+			return (nalu->size + i - offSet);
 		}
 	}
 	return 0;
@@ -177,35 +178,43 @@ void CloseMP4File(MP4FileHandle hMp4File)
 {
 	if (hMp4File)
 	{
-		MP4Close(hMp4File);
+		MP4Close(hMp4File,0);
 		hMp4File = NULL;
 	}
 }
 
 bool WriteH264File(const char* pFile264, const char* pFileMp4)
 {
+    unsigned char buffer[BUFFER_SIZE];
+    bool MP4FILE = FALSE;
+    MP4FileHandle hMp4File;
 	if (pFile264 == NULL || pFileMp4 == NULL)
 	{
 		return false;
 	}
 
-	MP4FileHandle hMp4File = CreateMP4File(pFileMp4, 352, 288);
+	MP4FILE = CreateMP4File(pFileMp4, 352, 288, 1200000, 25);
+	if( MP4FILE == FALSE ){
+        printf("ERROR:Create file failed!");
+	}
 
+	hMp4File =F_H264_MP4ENCODER.hMp4file;
+	printf ("----hMp4File  %x \n", hMp4File);
 	if (hMp4File == NULL)
 	{
 		printf("ERROR:Create file failed!");
 		return false;
 	}
-
+		printf("Create file succeed!\n");
 	FILE *fp = fopen(pFile264, "rb");
 	if (!fp)
 	{
-		printf("ERROR:open file failed!");
+		printf("ERROR:open file failed!\n");
 		return false;
 	}
+    printf("open file succeed!");
 	fseek(fp, 0, SEEK_SET);
 
-	unsigned char *buffer = new unsigned char[BUFFER_SIZE];
 	int pos = 0;
 	while (1)
 	{
@@ -232,25 +241,27 @@ bool WriteH264File(const char* pFile264, const char* pFileMp4)
 				break;
 			}
 		}
-
+        printf( "write h264 data, readlen is %d  \n",readlen);
 		writelen = WriteH264Data(hMp4File, buffer, writelen);
+        printf( "write h264 data %d\n",writelen );
 		if (writelen <= 0)
 		{
 			break;
 		}
-//		memcpy(buffer, buffer + writelen, readlen - writelen + 1);
+		memcpy(buffer, buffer + writelen, readlen - writelen + 1);
 		pos = readlen - writelen + 1;
 	}
 	fclose(fp);
 
-	delete[] buffer;
+
 	CloseMP4File(hMp4File);
 
 	return true;
 }
 
-bool PraseMetadata(const unsigned char* pData, int size, MP4ENC_Metadata &metadata)
+bool PraseMetadata(const unsigned char* pData, int size, MP4ENC_Metadata *metadata)
 {
+    int len;
 	if (pData == NULL || size<4)
 	{
 		return false;
@@ -258,18 +269,18 @@ bool PraseMetadata(const unsigned char* pData, int size, MP4ENC_Metadata &metada
 	MP4ENC_NaluUnit nalu;
 	int pos = 0;
 	bool bRet1 = false, bRet2 = false;
-	while (int len = ReadOneNaluFromBuf(pData, size, pos, nalu))
+	while (len = ReadOneNaluFromBuf(pData, size, pos, &nalu))
 	{
 		if (nalu.type == 0x07)
 		{
-			memcpy(metadata.Sps, nalu.data, nalu.size);
-			metadata.nSpsLen = nalu.size;
+			memcpy(metadata->Sps, nalu.data, nalu.size);
+			metadata->nSpsLen = nalu.size;
 			bRet1 = true;
 		}
 		else if ((nalu.type == 0x08))
 		{
-			memcpy(metadata.Pps, nalu.data, nalu.size);
-			metadata.nPpsLen = nalu.size;
+			memcpy(metadata->Pps, nalu.data, nalu.size);
+			metadata->nPpsLen = nalu.size;
 			bRet2 = true;
 		}
 		pos += len;
