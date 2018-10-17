@@ -1,0 +1,5 @@
+# depslib dependency file v1.0
+1539740631 source:/home/fredy/install/work/MP4/MP4Encoder/mp4cencoder/main.c
+	<stdio.h>
+	<stdlib.h>
+
