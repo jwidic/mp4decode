@@ -44,6 +44,3 @@ exec:clean $(TARGET)
 # compile rules
 %.o:%.c
 	$(CC) $(CFLAGS) $(INC) -o $@ -c $<
-		
-	
-
