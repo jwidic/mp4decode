@@ -24,7 +24,7 @@ LDFLAGS = -L ./lib
 RPATH = -Wl,-rpath=./lib
 
 # SRC
-SRCS = main.c
+SRCS = main.c MP4Encoder.c
 # Obj file
 OBJS = $(SRCS:.c=.o)
 #OBJS = main.o MP4Encoder.o
