@@ -51,7 +51,7 @@
 	<mp4v2/streaming.h>
 	<mp4v2/isma.h>
 
-1540985155 source:/home/fredy/install/work/MP4/MP4Encoder/mp4cDecoder/main.c
+1541155667 source:/home/fredy/install/work/MP4/MP4Encoder/mp4cDecoder/main.c
 	<stdlib.h>
 	<stdio.h>
 	<string.h>
@@ -60,6 +60,7 @@
 	<time.h>
 	<sys/time.h>
 	"include/mp4v2/mp4v2.h"
+	"MP4Encoder.h"
 
 1539762914 /home/fredy/install/work/MP4/MP4Encoder/mp4cDecoder/include/mp4v2/mp4v2.h
 	<mp4v2/platform.h>
@@ -75,4 +76,11 @@
 	<mp4v2/itmf_tags.h>
 	<mp4v2/streaming.h>
 	<mp4v2/isma.h>
+
+1541157063 source:/home/fredy/install/work/MP4/MP4Encoder/mp4cDecoder/MP4Encoder.c
+	"MP4Encoder.h"
+	<string.h>
+
+1541157270 /home/fredy/install/work/MP4/MP4Encoder/mp4cDecoder/MP4Encoder.h
+	"include/mp4v2/mp4v2.h"
 
