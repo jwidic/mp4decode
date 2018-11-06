@@ -15,7 +15,6 @@ int get264stream(MP4FileHandle oMp4File,int VTrackId,int totalFrame,char *name)
 {
     unsigned char *pData=NULL;
     unsigned char *p =NULL;
-    unsigned int i=0;
     unsigned int nSize =0;
 
     MP4Timestamp pStartTime;
@@ -76,20 +75,27 @@ void get_loop()
 {
 ;;;;
 }
+static int gene_filename(char *pFileName,const char *pFileType )
+{
+	time_t curTime = time(NULL);
+	struct tm *sTm = localtime(&curTime);
+	sprintf(pFileName,"%02d%02d%02d%02d%02d%02d",(sTm->tm_year-100),(sTm->tm_mon+1),
+                                    sTm->tm_mday,sTm->tm_hour,sTm->tm_min,sTm->tm_sec);
+	strcat(pFileName,pFileType);
+	printf("pFileName %s size %d \n",pFileName, sizeof(pFileName));
+
+	return 0;
+}
+
 void get_h264()
 {
         int video_frame =0;
-		int frame_temp =0,frame_total=0;
-		// added mp4 decoder:
 		unsigned char *pData=NULL;
 		unsigned char *p =NULL;
-		unsigned char *pDatatemp =NULL;
-		//unsigned char *p =NULL;
-		unsigned int i=0;
+
 		static unsigned int nSize =0;
 		// addition
 		int frameLength = 0;
-
 
 		MP4Timestamp pStartTime;
 		MP4Duration  pDuration;
@@ -97,22 +103,58 @@ void get_h264()
 		unsigned long framesize=0x00000000;
 		bool pIsSyncSample =0;
 		static int nReadIndex =0;
-		FILE *pFile = NULL;
-
 		static bool IsMp4Open = FALSE;
 		static bool FirstIdx = FALSE;
+        static FILE *pFile = NULL;
+
 		if(!IsMp4Open){
+            // add pFile
+
+
 			openmp4file("cbbRec.mp4", &F_H264_MP4DECODER.hMp4file);
 			FirstIdx = TRUE;
 			IsMp4Open = TRUE;
+            nReadIndex=0;
+
+			//add write the h264
+
+            static char pFileName[20];
+            gene_filename(pFileName,".h264");
+            pFile = fopen(pFileName,"wb");
+
 		}
+
+        if(nReadIndex >= F_H264_MP4DECODER.VnumSamples){
+            if( IsMp4Open ){
+                // add
+                fflush(pFile);
+                fclose(pFile);
+
+                //add write the h264
+                char pFileName[20];
+                gene_filename(pFileName,".h264");
+                pFile = fopen(pFileName,"wb");
+
+                IsMp4Open = FALSE;
+                closemp4file(&F_H264_MP4DECODER.hMp4file);
+                openmp4file("cbbRec.mp4", &F_H264_MP4DECODER.hMp4file);
+                IsMp4Open = TRUE;
+                FirstIdx = TRUE;
+                nReadIndex=0;
+                if(!F_H264_MP4DECODER.hMp4file){
+                    printf("error open MP4 file \n");
+                }
+            }else{
+
+                printf("File is not exist");
+
+            }
+        }
+
+
 		if(!F_H264_MP4DECODER.hMp4file){
 			printf("error open MP4 file \n");
-			return -1;
 		}
-		// fredy add file head!
-		//fwrite(HEAD,1,74,pFile);
-		//FirstIdx = TRUE;
 
         if(nReadIndex >= F_H264_MP4DECODER.VnumSamples){
 			IsMp4Open = FALSE;
@@ -137,29 +179,21 @@ void get_h264()
                 p = pData;
 			}
 			if(nSize > 0){
-				//fwrite(NAL,4,1,pFile);
 				framesize = 0x0;
 				framesize |= *pData<<24;
 				framesize |= *(pData+1)<<16;
 				framesize |= *(pData+2)<<8;
 				framesize |= *(pData+3);
 //            printf("nSize=%d\n",nSize);
-				if( FirstIdx == TRUE ){
-//					printf("%d\n",nSize+74);
-					FirstIdx = FALSE;
-				}else{
-//					printf("%d\n",nSize);
-				}
+//              printf("framesize=%x,nSize=%d\n",framesize,nSize);
 				video_frame = nSize;
 				nSize = nSize-framesize-4;
-//                printf("framesize=%x,nSize=%d\n",framesize,nSize);
 				pData = pData+4;
-				//fwrite(pData,framesize,1,pFile);
-				pDatatemp = pData;
+
 				if(nSize > 0)
 					pData=pData+framesize;
 			}
-			 printf("nReadIndex %d, framesize=%d,nSize=%d\n",nReadIndex,framesize,nSize);
+//			 printf("nReadIndex %d, framesize=%d,nSize=%d\n",nReadIndex,framesize,nSize);
 
 
 		}
@@ -169,12 +203,16 @@ void get_h264()
 					//memcpy((char *)bitstreamBuf->bufAddr,(char *)HEAD, 74);
 					//memcpy((char *)bitstreamBuf->bufAddr+74,(char *)NAL, 4);
 					//memcpy((char *)bitstreamBuf->bufAddr+78,(char *)pDatatemp, framesize);
+                    fwrite(HEAD,1,74,pFile);
+                    fwrite(NAL,1,4,pFile);
+                    fwrite(pData,1,framesize,pFile);
 					if( ( 78 + framesize) == (frameLength+74) ){
+                           printf("%d \n",(frameLength+74));
 					//	bitstreamBuf->fillLength = frameLength;
 					}else{
 						printf("write_error \n");
 					}
-					FirstIdx == FALSE;
+					FirstIdx = FALSE;
 					//bitstreamBuf->fillLength = fread(bitstreamBuf->bufAddr, 1U,
 					//								 frameLength, pObj->fpDataStream[channelId]);
 					//bitstreamBuf->fillLength = fread(bitstreamBuf->bufAddr, 1U,
@@ -182,8 +220,10 @@ void get_h264()
 				}else{
 					//memcpy((char *)bitstreamBuf->bufAddr,(char *)NAL, 4);
 					//memcpy((char *)bitstreamBuf->bufAddr+4,(char *)pDatatemp, framesize);
-
+                    fwrite(NAL,1,4,pFile);
+                    fwrite(pData,1,framesize,pFile);
 					if( ( 4 + framesize) == frameLength){
+                        printf("%d \n",(frameLength));
 					//	bitstreamBuf->fillLength = frameLength;
 					}else{
 						printf("write_error \n");
@@ -191,7 +231,7 @@ void get_h264()
 					}
 
 				}
-				printf( "framelength: %d  video_frame %d framesize %d \n", frameLength,video_frame, framesize);
+//				printf( "framelength: %d  video_frame %d framesize %d \n", frameLength,video_frame, framesize);
                 free(p);
                 pData = NULL;
                 p = NULL;
